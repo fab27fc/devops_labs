@@ -1,4 +1,4 @@
-# 1. AWS - Auto Scaling Web Application with EC2 and ELB
+# 1. AWS - Auto Scaling Web Application with EC2 and ELB (ALB)
 
 ## Problem
 
@@ -8,12 +8,15 @@ A web application faces high traffic fluctuations and requires an auto-scaling s
 
 # Tools / Services Used
 
-- AWS EC2
-- Auto Scaling Group
-- Elastic Load Balancer (ELB)
-- CloudWatch
-- IAM
-- VPC
+# Architecture
+
+Internet
+    ↓
+Application Load Balancer (ALB)
+    ↓
+Auto Scaling Group
+    ↓
+EC2 Instances
 
 ---
 
@@ -204,7 +207,7 @@ chmod 400 ~/.ssh/keypair_project_1-aws.pem
 ## 3.4 Connect to the EC2 Instance
 
 ```bash
-ssh -i "~/.ssh/keypair_project_1-aws.pem" ubuntu@13.219.85.19
+ssh -i ~/.ssh/keypair_project_1-aws.pem ubuntu@13.219.85.19
 ```
 
 ---
@@ -329,17 +332,20 @@ This AMI will be used by the Auto Scaling Group to launch new EC2 instances auto
 Go to:
 
 ```text
-EC2 → Launch Templates → Create launch template
+EC2 → Launch Templates → Create template from instance
 ```
 
 Configuration:
 
 ```text
-Name: lt-project-1-aws
+Name: template-project-1-aws
 AMI: ami-project-1-aws
 Instance Type: t3.micro
 Security Group: sg-project-1-aws
 Key Pair: keypair_project_1-aws
+
+Note:
+The subnet selection will be configured later in the Auto Scaling Group.
 ```
 
 ---
@@ -356,7 +362,7 @@ Configuration:
 
 ```text
 Name: asg-project-1-aws
-Launch Template: lt-project-1-aws
+Launch Template: template-project-1-aws
 ```
 
 Select VPC:
@@ -368,8 +374,26 @@ vpc-project-1-aws
 Select Subnets:
 
 ```text
-subnet-public-1a
-subnet-public-1b
+subnet-public-1a ->     use1-az2 (us-east-1a) | subnet-084d5b32ce97260af (vpc-project-1-aws-PUBLIC-1A)   10.0.1.0/24
+subnet-public-1b ->     use1-az4 (us-east-1b) | subnet-0e37eae31da360f78 (vpc-project-1-aws-PUBLIC-1B)   10.0.2.0/24
+Balance best effort
+
+
+Benefits:
+- High availability
+- Load balancing across Availability Zones (AZs)
+- Automatic scaling
+
+NEXT
+Attach to a new load balancer
+Load balancer name: lb-project-1-aws-1
+Internet-facing
+Availability Zones and subnets:
+2 Subnets
+Listeners and routing: 80
+New target: tg-project-1-aws
+Enable health checks
+Health check grace period -> 300
 ```
 
 ---
@@ -377,9 +401,47 @@ subnet-public-1b
 ## 5.3 Configure Capacity
 
 ```text
-Desired Capacity: 2
-Minimum Capacity: 2
+Desired Capacity: 1
+Minimum Capacity: 1
 Maximum Capacity: 4
+
+Automatic scaling: Target tracking scaling policy
+
+Metric:
+Average CPU utilization
+
+Target value:
+70
+
+Instance maintenance policy: No policy
+Additional capacity settings: Default
+Auto Scaling group deletion protection - new: Default
+NEXT -> NEXT -> NEXT -> Create Auto Scaling Group
+
+The Auto Scaling Group launches EC2 instances automatically based on the desired capacity configuration.
+Example:
+1-  ec2-project-1-aws
+2-  ec2-project-1-aws
+3-  ec2-project-1-aws
+
+http://lb-project-1-aws-1-1120625375.us-east-1.elb.amazonaws.com
+
+# Troubleshooting
+Issue:
+Website was not accessible through the Load Balancer.
+
+Checks performed:
+
+1. Verify VPC DNS settings
+- Enable DNS hostnames
+- Enable DNS resolution
+
+2. Verify Security Group rules
+- Allow HTTP TCP 80 from 0.0.0.0/0
+
+3. Verify Route Table
+- Confirm route:
+0.0.0.0/0 → Internet Gateway
 ```
 
 ---
@@ -401,6 +463,10 @@ Name: tg-project-1-aws
 Protocol: HTTP
 Port: 80
 Target Type: Instance
+Registered targets (2)
+FIRST EC2:  i-0f6ca00cbd19a800a  |  ec2-project-1-aws  |  80  |  us-east-1a (use1-az2)
+SECOND EC2: i-07f657e05a6cbe381  |  ec2-project-1-aws  |  80  |  us-east-1b (use1-az4)
+
 ```
 
 Register EC2 instances.
@@ -418,7 +484,7 @@ EC2 → Load Balancers → Create Application Load Balancer
 Configuration:
 
 ```text
-Name: alb-project-1-aws
+Name: lb-project-1-aws
 Scheme: Internet-facing
 IP Type: IPv4
 ```
@@ -482,12 +548,13 @@ Create policy:
 Policy Type: Target Tracking
 Metric: Average CPU Utilization
 Target Value: 70%
+The Auto Scaling Group automatically increases or decreases the number of EC2 instances to maintain the target CPU utilization.
 ```
 
 Action:
 
 ```text
-Add 1 instance when CPU > 70%
+AWS automatically adds instances to maintain the target CPU utilization.
 ```
 
 ---
@@ -540,3 +607,16 @@ Verify:
 - CPU metrics increase in CloudWatch
 - Load Balancer distributes traffic correctly
 - Instances terminate automatically when traffic decreases
+
+- Installing stress:
+sudo apt update
+sudo apt install stress -y
+
+Running the process:
+stress --cpu 4 --timeout 600
+stress-ng --cpu 4 --timeout 10m --metrics-brief
+
+Run a load test against the Load Balancer:
+ab -n 5000 -c 50 http://lb-project-1-aws-1-1120625375.us-east-1.elb.amazonaws.com/
+
+This command generates HTTP traffic against the Load Balancer to increase CPU utilization and trigger Auto Scaling events.
