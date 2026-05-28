@@ -128,10 +128,12 @@ ansible --version
 ```
 
 ---
-## 2. Define an Inventory File with Server IPs
+2. Define an Inventory File with Server IPs
+2.1 Create Web Servers with Terraform
 
-### 2.1 Create Web Servers with Terraform
+Terraform was used to provision the AWS infrastructure and automatically generate the Ansible inventory file. This approach eliminates manual server creation and reduces the need to update inventory files whenever IP addresses change.
 
+2.1.1 Project Structure
 Control Node
 ├── ansible-project/
 │   └── site.yml
@@ -144,7 +146,7 @@ Control Node
     ├── variables.tf
     ├── terraform.tfvars
     └── versions.tf
-
+2.1.2 Terraform Workflow
 Terraform
    ↓
 Creates EC2 Web Servers
@@ -156,9 +158,17 @@ Ansible Control Node
 Runs Playbook
    ↓
 Installs and Configures Nginx
+2.1.3 Terraform Files Overview
+File	Purpose
+inventory.tpl	Generates the Ansible inventory automatically
+main.tf	Creates AWS infrastructure resources
+variables.tf	Defines reusable variables
+terraform.tfvars	Stores deployment values
+versions.tf	Defines Terraform providers and versions
+2.1.4 inventory.tpl
 
-TERRAFORM FILES:
-1- inventory.tpl 
+This template dynamically generates the Ansible inventory file using the private IP addresses assigned to the EC2 instances.
+
 [webservers]
 %{ for index, server in webservers ~}
 web0${index + 1} ansible_host=${server.private_ip} ansible_user=ubuntu
@@ -167,7 +177,16 @@ web0${index + 1} ansible_host=${server.private_ip} ansible_user=ubuntu
 [webservers:vars]
 ansible_ssh_private_key_file=~/.ssh/keypair_project_1-aws.pem
 
-2- main.tf
+Purpose
+
+Automatically populates the inventory file.
+Uses the EC2 private IP addresses.
+Eliminates manual inventory management.
+2.1.5 main.tf
+
+The main.tf file provisions the AWS infrastructure.
+
+2.1.5.1 Ubuntu AMI
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners      = ["099720109477"]
@@ -178,40 +197,22 @@ data "aws_ami" "ubuntu" {
   }
 }
 
+Purpose
+
+Retrieves the latest Ubuntu AMI.
+Avoids hardcoded AMI IDs.
+Improves maintainability.
+2.1.5.2 Security Group
 resource "aws_security_group" "web_sg" {
-  name        = "${var.project_name}-web-sg"
-  description = "Allow SSH and HTTP"
-  vpc_id      = var.vpc_id
-
-  ingress {
-    description = "Allow SSH from my IP"
-    from_port   = 22
-    to_port     = 22
-    protocol    = "tcp"
-    cidr_blocks = ["10.0.0.0/16"]
-  }
-
-  ingress {
-    description = "Allow HTTP from anywhere"
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  egress {
-    description = "Allow all outbound traffic"
-    from_port   = 0
-    to_port     = 0
-    protocol    = "-1"
-    cidr_blocks = ["0.0.0.0/0"]
-  }
-
-  tags = {
-    Name = "${var.project_name}-web-sg"
-  }
+  ...
 }
 
+Purpose
+
+Allows SSH access on port 22.
+Allows HTTP traffic on port 80.
+Allows outbound Internet access.
+2.1.5.3 EC2 Instances
 resource "aws_instance" "web" {
   count                       = 2
   ami                         = data.aws_ami.ubuntu.id
@@ -227,6 +228,18 @@ resource "aws_instance" "web" {
   }
 }
 
+Purpose
+
+Creates two EC2 instances.
+Assigns public IP addresses.
+Associates Security Groups.
+Configures SSH access using a Key Pair.
+
+Generated servers:
+
+web01
+web02
+2.1.5.4 Dynamic Inventory Generation
 resource "local_file" "ansible_inventory" {
   filename = "${path.module}/inventory/hosts.ini"
 
@@ -235,13 +248,21 @@ resource "local_file" "ansible_inventory" {
   })
 }
 
-3- terraform.tfvars 
+Purpose
+
+Automatically generates the inventory file.
+Eliminates manual inventory updates.
+2.1.6 terraform.tfvars
 key_name  = "keypair_project_1-aws"
 vpc_id    = "vpc-0cc9e77c72331c0c7"
 subnet_id = "subnet-0e37eae31da360f78"
 my_ip     = "107.22.72.201/32"
 
-4- variables.tf
+Purpose
+
+Stores deployment-specific values separately from the Terraform code.
+
+2.1.7 variables.tf
 variable "aws_region" {
   default = "us-east-1"
 }
@@ -266,7 +287,11 @@ variable "my_ip" {
   description = "Public IP for SSH access"
 }
 
-5- version
+Purpose
+
+Defines reusable Terraform variables and improves code flexibility.
+
+2.1.8 versions.tf
 terraform {
   required_providers {
     aws = {
@@ -284,6 +309,10 @@ terraform {
 provider "aws" {
   region = var.aws_region
 }
+
+Purpose
+
+Defines Terraform provider versions and ensures deployment consistency.
 
 
 KEY: 
