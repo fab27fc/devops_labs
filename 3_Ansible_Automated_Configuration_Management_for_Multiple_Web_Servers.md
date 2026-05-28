@@ -1,25 +1,36 @@
-3. Ansible - Automated Configuration Management for Multiple Web Servers
-Problem
+# 3. Ansible - Automated Configuration Management for Multiple Web Servers
+
+## Problem
 
 Managing configuration across multiple servers manually is error-prone and time-consuming.
 
-Tools / Services Used
-Ansible
-AWS EC2
-Azure VM
-YAML
-Linux
-SSH
-GitHub
-Terraform
-Implementation Steps
-Install Ansible on a control node.
-Define an inventory file with server IPs.
-Write an Ansible playbook to install and configure Nginx.
-Use Ansible roles to modularize configurations.
-Run the playbook using ansible-playbook site.yml.
-Verify the setup by accessing the web server from different nodes.
-Project Objective
+---
+
+## Tools / Services Used
+
+- Ansible
+- AWS EC2
+- Azure VM
+- YAML
+- Linux
+- SSH
+- GitHub
+- Terraform
+
+---
+
+## Implementation Steps
+
+1. Install Ansible on a control node.
+2. Define an inventory file with server IPs.
+3. Write an Ansible playbook to install and configure Nginx.
+4. Use Ansible roles to modularize configurations.
+5. Run the playbook using ansible-playbook site.yml.
+6. Verify the setup by accessing the web server from different nodes.
+
+---
+
+## Project Objective
 
 The goal of this project is to automate the installation and configuration of Nginx across multiple Linux web servers using Ansible.
 
@@ -27,10 +38,13 @@ Terraform is used to provision the infrastructure, while Ansible is responsible 
 
 This approach follows Infrastructure as Code (IaC) and Configuration Management best practices.
 
-Architecture
+---
+
+## Architecture
 
 The Ansible Control Node connects to multiple Linux web servers using SSH and applies the same configuration automatically.
 
+```text
                 +----------------------+
                 |  Ansible Control Node |
                 +----------------------+
@@ -43,10 +57,11 @@ The Ansible Control Node connects to multiple Linux web servers using SSH and ap
 |   Web Server 1 |           |   Web Server 2 |
 |      Nginx     |           |      Nginx     |
 +----------------+           +----------------+
+```
 
 ---
 
-# Prerequisites
+## Prerequisites
 
 Before starting the project, make sure you have:
 
