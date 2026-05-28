@@ -410,7 +410,6 @@ web02 | SUCCESS
 
 This confirms that Ansible can communicate successfully with all managed hosts.
 
-```
 <img width="1076" height="381" alt="image" src="https://github.com/user-attachments/assets/d5eda30a-d0d1-4818-8ec2-9f2fcae5bcd0" />
 
 
