@@ -411,7 +411,8 @@ web02 | SUCCESS
 This confirms that Ansible can communicate successfully with all managed hosts.
 
 ```
-<img width="1053" height="366" alt="image" src="https://github.com/user-attachments/assets/3f94cac4-39d9-4298-a5f6-dd5477a2680d" />
+<img width="1076" height="381" alt="image" src="https://github.com/user-attachments/assets/d5eda30a-d0d1-4818-8ec2-9f2fcae5bcd0" />
+
 
 ---
 
@@ -420,11 +421,36 @@ This confirms that Ansible can communicate successfully with all managed hosts.
 
 ### 3.1 Create the Main Playbook
 
+Create the main Ansible playbook:
+
 ```bash
 nano site.yml
 ```
 
+Add the following configuration:
+
+```yaml
 ---
+- name: Configure Web Servers
+  hosts: webservers
+  become: true
+
+  tasks:
+    - name: Update package cache
+      apt:
+        update_cache: yes
+
+    - name: Install Nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Start and enable Nginx
+      service:
+        name: nginx
+        state: started
+        enabled: yes
+```
 
 ### 3.2 Configure the Playbook
 
