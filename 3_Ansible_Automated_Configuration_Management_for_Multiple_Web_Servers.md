@@ -127,26 +127,30 @@ sudo apt install ansible
 ansible --version
 ```
 
----
-2. Define an Inventory File with Server IPs
-2.1 Create Web Servers with Terraform
+## 2. Define an Inventory File with Server IPs
 
-Terraform was used to provision the AWS infrastructure and automatically generate the Ansible inventory file. This approach eliminates manual server creation and reduces the need to update inventory files whenever IP addresses change.
+### 2.1 Create Web Servers with Terraform
 
-2.1.1 Project Structure
-Control Node
-├── ansible-project/
-│   └── site.yml
-│
-└── terraform/
-    ├── inventory/
-    │   └── hosts.ini
-    ├── inventory.tpl
-    ├── main.tf
-    ├── variables.tf
-    ├── terraform.tfvars
-    └── versions.tf
-2.1.2 Terraform Workflow
+Terraform was used to provision the AWS infrastructure and automatically generate the Ansible inventory file. This approach eliminates manual server creation and reduces the need to manually update inventory files whenever server IP addresses change.
+
+#### 2.1.1 Project Structure
+
+The following directory structure was used on the Ansible Control Node:
+
+```text
+terraform/
+├── inventory/
+│   └── hosts.ini
+├── inventory.tpl
+├── main.tf
+├── variables.tf
+├── terraform.tfvars
+└── versions.tf
+```
+
+#### 2.1.2 Terraform Workflow
+
+```text
 Terraform
    ↓
 Creates EC2 Web Servers
@@ -158,215 +162,222 @@ Ansible Control Node
 Runs Playbook
    ↓
 Installs and Configures Nginx
-2.1.3 Terraform Files Overview
-File	Purpose
-inventory.tpl	Generates the Ansible inventory automatically
-main.tf	Creates AWS infrastructure resources
-variables.tf	Defines reusable variables
-terraform.tfvars	Stores deployment values
-versions.tf	Defines Terraform providers and versions
-2.1.4 inventory.tpl
+```
 
-This template dynamically generates the Ansible inventory file using the private IP addresses assigned to the EC2 instances.
+#### 2.1.3 inventory.tpl
 
+This file is used as a template to automatically generate the Ansible inventory file based on the EC2 instances created by Terraform.
+
+Example:
+
+```ini
 [webservers]
-%{ for index, server in webservers ~}
-web0${index + 1} ansible_host=${server.private_ip} ansible_user=ubuntu
-%{ endfor ~}
+web01 ansible_host=10.0.2.142 ansible_user=ubuntu
+web02 ansible_host=10.0.2.24 ansible_user=ubuntu
+```
 
-[webservers:vars]
-ansible_ssh_private_key_file=~/.ssh/keypair_project_1-aws.pem
+Purpose:
 
-Purpose
+* Automatically builds the inventory file.
+* Uses EC2 private IP addresses.
+* Eliminates manual inventory updates.
 
-Automatically populates the inventory file.
-Uses the EC2 private IP addresses.
-Eliminates manual inventory management.
-2.1.5 main.tf
+---
 
-The main.tf file provisions the AWS infrastructure.
+#### 2.1.4 main.tf
 
-2.1.5.1 Ubuntu AMI
-data "aws_ami" "ubuntu" {
-  most_recent = true
-  owners      = ["099720109477"]
+The main Terraform configuration file responsible for creating AWS resources.
 
-  filter {
-    name   = "name"
-    values = ["ubuntu/images/hvm-ssd-gp3/ubuntu-noble-24.04-amd64-server-*"]
-  }
-}
+Resources managed:
 
-Purpose
+* EC2 instances
+* Security Groups
+* Dynamic inventory generation
 
-Retrieves the latest Ubuntu AMI.
-Avoids hardcoded AMI IDs.
-Improves maintainability.
-2.1.5.2 Security Group
-resource "aws_security_group" "web_sg" {
-  ...
-}
+Example:
 
-Purpose
-
-Allows SSH access on port 22.
-Allows HTTP traffic on port 80.
-Allows outbound Internet access.
-2.1.5.3 EC2 Instances
+```hcl
 resource "aws_instance" "web" {
-  count                       = 2
-  ami                         = data.aws_ami.ubuntu.id
-  instance_type               = "t3.micro"
-  subnet_id                   = var.subnet_id
-  key_name                    = var.key_name
-  vpc_security_group_ids      = [aws_security_group.web_sg.id]
-  associate_public_ip_address = true
-
-  tags = {
-    Name = "${var.project_name}-web0${count.index + 1}"
-    Role = "webserver"
-  }
+  count         = 2
+  instance_type = "t3.micro"
 }
+```
 
-Purpose
+Purpose:
 
-Creates two EC2 instances.
-Assigns public IP addresses.
-Associates Security Groups.
-Configures SSH access using a Key Pair.
+* Creates infrastructure resources.
+* Defines server configuration.
+* Associates Security Groups and Key Pairs.
 
-Generated servers:
+---
 
-web01
-web02
-2.1.5.4 Dynamic Inventory Generation
-resource "local_file" "ansible_inventory" {
-  filename = "${path.module}/inventory/hosts.ini"
+#### 2.1.5 terraform.tfvars
 
-  content = templatefile("${path.module}/inventory.tpl", {
-    webservers = aws_instance.web
-  })
-}
+Stores deployment-specific values that can change between environments.
 
-Purpose
+Example:
 
-Automatically generates the inventory file.
-Eliminates manual inventory updates.
-2.1.6 terraform.tfvars
+```hcl
 key_name  = "keypair_project_1-aws"
-vpc_id    = "vpc-0cc9e77c72331c0c7"
-subnet_id = "subnet-0e37eae31da360f78"
-my_ip     = "107.22.72.201/32"
+aws_region = "us-east-1"
+```
 
-Purpose
+Purpose:
 
-Stores deployment-specific values separately from the Terraform code.
+* Separates configuration from code.
+* Simplifies deployments.
+* Improves reusability.
 
-2.1.7 variables.tf
+---
+
+#### 2.1.6 variables.tf
+
+Defines reusable Terraform variables used throughout the project.
+
+Example:
+
+```hcl
 variable "aws_region" {
   default = "us-east-1"
 }
+```
 
-variable "project_name" {
-  default = "project3-ansible"
-}
+Purpose:
 
-variable "key_name" {
-  description = "AWS Key Pair"
-}
+* Reduces hardcoded values.
+* Makes the project more flexible.
+* Simplifies maintenance.
 
-variable "vpc_id" {
-  description = "VPC ID"
-}
+---
 
-variable "subnet_id" {
-  description = "Subnet ID"
-}
+#### 2.1.7 versions.tf
 
-variable "my_ip" {
-  description = "Public IP for SSH access"
-}
+Defines Terraform provider requirements and version compatibility.
 
-Purpose
+Example:
 
-Defines reusable Terraform variables and improves code flexibility.
-
-2.1.8 versions.tf
+```hcl
 terraform {
   required_providers {
     aws = {
-      source  = "hashicorp/aws"
-      version = "~> 6.0"
-    }
-
-    local = {
-      source  = "hashicorp/local"
-      version = "~> 2.5"
+      source = "hashicorp/aws"
     }
   }
 }
+```
 
-provider "aws" {
-  region = var.aws_region
-}
+Purpose:
 
-Purpose
+* Ensures provider compatibility.
+* Maintains consistent deployments.
+* Prevents version conflicts.
 
-Defines Terraform provider versions and ensures deployment consistency.
+---
 
+### 2.2 Configure AWS CLI and SSH Access
 
-KEY: 
-Move the key from the local computer to the EC2:
-scp -i keypair_project_1-aws.pem keypair_project_1-aws.pem ubuntu@107.22.72.201:/home/ubuntu/.ssh/
-chmod 400 keypair_project_1-aws.pem
+#### 2.2.1 Copy the SSH Key
 
-Need to install:
+Copy the private key from the local machine to the Ansible Control Node.
+
+```bash
+scp -i keypair_project_1-aws.pem keypair_project_1-aws.pem ubuntu@CONTROL_NODE_IP:/home/ubuntu/.ssh/
+```
+
+Set the appropriate permissions:
+
+```bash
+chmod 400 ~/.ssh/keypair_project_1-aws.pem
+```
+
+#### 2.2.2 Install AWS CLI
+
+Install the AWS CLI on the Control Node.
+
+```bash
 sudo apt update
 sudo apt install awscli -y
+```
 
-Test:
+Verify the installation:
+
+```bash
 aws --version
+```
+
+#### 2.2.3 Verify AWS Credentials
+
+Confirm that Terraform can access the AWS account.
+
+```bash
 aws sts get-caller-identity
+```
 
-Terraform doesnt have AWS credentials:
-EC2 → Instances → selecciona control node
-→ Actions → Security
-→ Modify IAM role  → AdministratorAccess 
+If credentials are not available, attach an IAM Role to the Control Node.
 
+```text
+EC2
+→ Instances
+→ Select Control Node
+→ Actions
+→ Security
+→ Modify IAM Role
+→ AdministratorAccess
+```
 
+#### 2.2.4 Add Known Hosts
+
+Add the target servers to the SSH known hosts file.
+
+```bash
 ssh-keyscan -H 10.0.2.142 >> ~/.ssh/known_hosts
 ssh-keyscan -H 10.0.2.24 >> ~/.ssh/known_hosts
+```
 
+---
 
-Terraform was used to create two EC2 instances:
+### 2.3 Deploy Terraform Infrastructure
 
-- web01
-- web02
+Initialize Terraform:
 
-### 2.2 Terraform Generates the Ansible Inventory
-
-Terraform automatically creates the file:
+```bash
 terraform init
+```
+
+Format Terraform files:
+
+```bash
 terraform fmt
+```
+
+Validate the configuration:
+
+```bash
 terraform validate
+```
+
+Review the execution plan:
+
+```bash
 terraform plan
+```
+
+Deploy the infrastructure:
+
+```bash
 terraform apply
+```
 
-DEVOPS:
-Developer makes a commit
-Jenkins runs:
-terraform plan -out=tfplan
-Team reviews the plan
-Manual approval
-terraform apply tfplan
+Terraform creates the following servers:
 
-When we do a small change
-terraform fmt
-terraform validate
-terraform plan -out=tfplan
-terraform apply tfplan
+* web01
+* web02
 
-chmod 400 ~/.ssh/keypair_project_1-aws.pem
+---
+
+### 2.4 Terraform Generates the Ansible Inventory
+
+Terraform automatically creates the inventory file:
 
 ```text
 inventory/hosts.ini
@@ -378,15 +389,27 @@ Example output:
 [webservers]
 web01 ansible_host=PRIVATE_IP_WEB01 ansible_user=ubuntu
 web02 ansible_host=PRIVATE_IP_WEB02 ansible_user=ubuntu
-
-[webservers:vars]
-ansible_ssh_private_key_file=~/AnsibleKeyPair.pem
 ```
 
-### 2.3 Test Connectivity
+---
+
+### 2.5 Test Connectivity
+
+Verify connectivity between the Control Node and the managed servers.
 
 ```bash
 ansible -i inventory/hosts.ini webservers -m ping
+```
+
+Expected result:
+
+```text
+web01 | SUCCESS
+web02 | SUCCESS
+```
+
+This confirms that Ansible can communicate successfully with all managed hosts.
+
 ```
 <img width="1053" height="366" alt="image" src="https://github.com/user-attachments/assets/3f94cac4-39d9-4298-a5f6-dd5477a2680d" />
 
