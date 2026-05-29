@@ -146,6 +146,34 @@ terraform/
 ├── variables.tf
 ├── terraform.tfvars
 └── versions.tf
+└── outputs.tf
+ansible-project/
+├── inventories/
+│   ├── dev/
+│   │   ├── hosts.yml
+│   │   └── group_vars/
+│   │
+│   ├── test/
+│   │   ├── hosts.yml
+│   │   └── group_vars/
+│   │
+│   └── prod/
+│       ├── hosts.yml
+│       └── group_vars/
+│
+├── roles/
+│   ├── nginx/
+│   ├── docker/
+│   ├── jenkins/
+│   └── sonarqube/
+│
+├── playbooks/
+│   ├── webservers.yml
+│   ├── docker.yml
+│   └── jenkins.yml
+│
+├── ansible.cfg
+└── README.md
 ```
 
 #### 2.1.2 Terraform Workflow
