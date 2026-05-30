@@ -652,6 +652,7 @@ git init
 ## Add Project Files
 
 ```bash
+git status
 git add .
 ```
 
@@ -673,15 +674,6 @@ git push -u origin main
 
 ---
 
-# Screenshots
-
-Add screenshots for:
-
-1. EC2 / VM instances
-2. Successful Ansible ping
-3. Playbook execution
-4. Nginx running in browser
-5. GitHub repository
 
 ---
 
