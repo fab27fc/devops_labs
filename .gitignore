@@ -1,0 +1,20 @@
+# Terraform
+*.tfstate
+*.tfstate.*
+tfplan
+
+# Ansible
+*.retry
+
+# SSH Keys
+*.pem
+
+# VS Code
+.vscode/
+
+# Logs
+*.log
+
+# Terraform inventory files
+hosts.ini
+inventory.yml

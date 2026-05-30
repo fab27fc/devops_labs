@@ -1,0 +1,22 @@
+---
+- name: Clean apt cache
+  command: apt-get clean
+  changed_when: false
+
+- name: Update package cache
+  apt:
+    update_cache: yes
+    force_apt_get: yes
+  retries: 5
+  delay: 20
+
+- name: Install Nginx
+  apt:
+    name: nginx
+    state: present
+
+- name: Start and enable Nginx
+  service:
+    name: nginx
+    state: started
+    enabled: yes
