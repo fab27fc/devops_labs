@@ -313,31 +313,17 @@ The application was deployed on an AWS EC2 Ubuntu instance using Docker Compose.
 Open a browser and navigate to:
 
 ```text
-http://<EC2-PUBLIC-IP>:3000
+http://34.229.86.237:3000/
 ```
+<img width="632" height="120" alt="image" src="https://github.com/user-attachments/assets/de0550bd-80ac-43dc-b51c-0a352529b155" />
 
-Expected output:
-
-```text
-Node.js application running inside Docker on AWS EC2!
-```
 
 ### Application Health Check
 
 ```text
-http://<EC2-PUBLIC-IP>:3000/health
+http://34.229.86.237:3000/health
 ```
-
-Expected output:
-
-```json
-{
-  "status": "healthy",
-  "service": "nodejs-docker-app"
-}
-```
-
----
+<img width="628" height="190" alt="image" src="https://github.com/user-attachments/assets/bda9670d-7e16-459a-880b-f3750bbcb6fc" />
 
 ## Docker Image Repository
 
@@ -346,6 +332,8 @@ Docker Hub Repository:
 ```text
 https://hub.docker.com/r/fab27fc/nodejs-app
 ```
+<img width="1672" height="902" alt="image" src="https://github.com/user-attachments/assets/c80f8e96-0d19-4cc5-aba6-c80bca9946c6" />
+
 
 The image can be pulled from any Docker host using:
 
