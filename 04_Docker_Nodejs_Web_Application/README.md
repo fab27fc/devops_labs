@@ -425,7 +425,7 @@ The resulting solution represents a practical DevOps workflow commonly used to b
 
 
 ********************************************************************************************************************
-### Future Enhancements
+# Future Enhancements
 
 * Implement CI/CD using GitHub Actions.
 * Add Nginx as a reverse proxy.
@@ -436,7 +436,7 @@ The resulting solution represents a practical DevOps workflow commonly used to b
 * Integrate monitoring with Prometheus and Grafana.
 * Implement vulnerability scanning with Trivy.
 
-### Proposed Future Architecture
+# Proposed Future Architecture
 
 Current State
       ↓
