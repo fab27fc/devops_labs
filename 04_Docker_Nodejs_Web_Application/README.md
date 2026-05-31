@@ -55,24 +55,8 @@ Port 3000
 * Git Installed
 
 Project Structure
-docker-nodejs-app/
-├── app/
-│   ├── Dockerfile
-│   ├── package.json
-│   └── server.js
-├── docs/
-│   └── architecture.md
-├── scripts/
-│   ├── build.sh
-│   ├── deploy.sh
-│   └── push-dockerhub.sh
-├── screenshots/
-├── .dockerignore
-├── .env.example
-├── .gitignore
-├── CHANGELOG.md
-├── docker-compose.yml
-└── README.md
+<img width="255" height="395" alt="image" src="https://github.com/user-attachments/assets/a88753ae-a97d-4a14-a38d-ea5577de7b8b" />
+
 
 File Description
 
