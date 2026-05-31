@@ -287,9 +287,6 @@ Password:
 
 <img width="511" height="545" alt="image" src="https://github.com/user-attachments/assets/e203e524-c01a-4db0-8580-6857c6e3e861" />
 
-Automaticaly:
-<img width="1037" height="476" alt="image" src="https://github.com/user-attachments/assets/8c6e8993-b8f3-45d9-b1b5-d772b57359e9" />
-
 After that:
 docker images
 docker tag docker-nodejs-app-nodeapp fab27fc/nodejs-app:v1
