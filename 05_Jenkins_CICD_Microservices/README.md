@@ -1,5 +1,7 @@
 5. Jenkins - CI/CD Pipeline for Microservices
-Problem: Developers need automated builds, testing, and deployments for a microservices architecture. Tools/Services Used: Jenkins, GitHub, Docker, Kubernetes, Helm, SonarQube. Implementation Steps:
+Problem: Developers need automated builds, testing, and deployments for a microservices architecture. Tools/Services Used: Jenkins, GitHub, Docker, Kubernetes, Helm, SonarQube. Implementation 
+Steps:
+
 1. Install Jenkins and configure necessary plugins.
 2. Set up a GitHub webhook for automatic builds.
 3. Define a Jenkins pipeline with stages (Build, Test, Dockerize, Deploy).
@@ -376,3 +378,92 @@ This project demonstrates a complete CI/CD pipeline implementation using Jenkins
 This project demonstrates a complete CI/CD pipeline implementation using Jenkins, GitHub, Docker, SonarQube, Kubernetes, and Helm.
 
 The solution automates the software delivery lifecycle from source code commit to Kubernetes deployment while incorporating code quality analysis, containerization, and deployment automation practices commonly used in modern DevOps environments.
+
+
+## Common Issues and Resolutions
+## Issue Encountered: GitHub Authentication Failure
+
+### Problem
+
+When attempting to push code from the Jenkins EC2 instance to GitHub, the following error was received:
+
+```text
+remote: Permission to fab27fc/devops_labs.git denied to fab27fc.
+fatal: unable to access 'https://github.com/fab27fc/devops_labs.git/': The requested URL returned error: 403
+```
+
+### Root Cause
+
+GitHub no longer supports password authentication for Git operations over HTTPS.
+
+Additionally, the EC2 instance did not have a configured SSH key associated with the GitHub account.
+
+### Troubleshooting Performed
+
+Verified the configured Git remote:
+
+```bash
+git remote -v
+```
+
+Output:
+
+```text
+https://github.com/fab27fc/devops_labs.git
+```
+
+Cleared cached credentials:
+
+```bash
+rm -f ~/.git-credentials
+git config --global --unset credential.helper
+```
+
+Generated a new SSH key:
+
+```bash
+ssh-keygen -t ed25519 -C "fab27fc@gmail.com"
+```
+
+Displayed the public key:
+
+```bash
+cat ~/.ssh/id_ed25519.pub
+```
+
+Added the public key to GitHub:
+
+```text
+GitHub
+ └── Settings
+      └── SSH and GPG Keys
+            └── New SSH Key
+```
+
+Updated the repository remote URL:
+
+```bash
+git remote set-url origin git@github.com:fab27fc/devops_labs.git
+```
+
+Verified SSH connectivity:
+
+```bash
+ssh -T git@github.com
+```
+
+Expected output:
+
+```text
+Hi fab27fc! You've successfully authenticated.
+```
+
+### Resolution
+
+After configuring SSH authentication and updating the Git remote URL, Git operations were successfully authenticated and code could be pushed to the GitHub repository without requiring a username, password, or personal access token.
+
+### Lesson Learned
+
+SSH authentication is the recommended method for managing Git repositories from cloud servers and CI/CD platforms such as Jenkins because it provides secure, persistent authentication and avoids issues related to Personal Access Tokens (PATs).
+
+
