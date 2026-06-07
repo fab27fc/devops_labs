@@ -1232,26 +1232,32 @@ The deployment used the Docker image from Docker Hub, created two running replic
 kubectl get deployments
 kubectl get pods
 ```
+<img width="1046" height="196" alt="image" src="https://github.com/user-attachments/assets/8760608c-fb99-4fd8-a90a-90f10afa36db" />
+
 
 ### Application Verification
 
 ```bash
 curl http://APPLICATION_IP
 ```
+<img width="1272" height="82" alt="image" src="https://github.com/user-attachments/assets/67000b35-2679-4f21-ab12-5065b423e54b" />
+
 
 ### Rollback Example
 
 ```bash
 helm rollback nodejs-app 1
 ```
+<img width="1272" height="92" alt="image" src="https://github.com/user-attachments/assets/f68ff6e1-0568-4e7e-9698-28f5fd428a22" />
+
 
 ### Verification After Rollback
 
 ```bash
 helm history nodejs-app
 ```
+<img width="1290" height="576" alt="image" src="https://github.com/user-attachments/assets/0a1ab187-f6c1-4098-b1a0-e9fdbb716a5d" />
 
-[Agregar screenshot]
 
 ---
 
@@ -1275,18 +1281,6 @@ helm history nodejs-app
 * Kubernetes-based deployments.
 * Helm chart deployment automation.
 * Pipeline as Code implementation.
-
----
-
-## Lessons Learned
-
-* Jenkins automates software delivery pipelines.
-* GitHub webhooks enable event-driven automation.
-* Docker provides portable application environments.
-* Kubernetes simplifies container orchestration.
-* Helm standardizes Kubernetes deployments.
-
----
 
 ## Future Enhancements
 
