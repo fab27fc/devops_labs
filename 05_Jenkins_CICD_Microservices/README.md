@@ -799,66 +799,430 @@ Integrates directly with Jenkins pipelines.
 Supports Quality Gates for deployment validation.
 
 
-
-
 # 5. Build and Push a Docker Image to Docker Hub
 
-### Docker Build
+## Objective
 
-```bash
-docker build -t nodejs-microservice .
-```
+Build a Docker image for the Node.js microservice and push it to Docker Hub.
 
-### Docker Tag
-
-```bash
-docker tag nodejs-microservice fab27fc/nodejs-microservice:v1
-```
-
-### Docker Push
-
-```bash
-docker push fab27fc/nodejs-microservice:v1
-```
-
-### Verification
-
-[Agregar screenshot Docker Hub]
+This step allows the application to be stored in a container registry so it can later be pulled and deployed to Kubernetes using Helm.
 
 ---
 
-# 6. Deploy the Container to Kubernetes Using Helm Charts
+## 5.1 Verify the Dockerfile Location
 
-### Install Kubernetes (k3s)
+The Dockerfile is located inside the `app/` directory.
 
-(Documentar instalación)
+Project structure:
 
-### Install Helm
-
-(Documentar instalación)
-
-### Create Helm Chart
-
-```bash
-helm create nodejs-chart
+```text
+05_Jenkins_CICD_Microservices/
+├── app/
+│   ├── Dockerfile
+│   ├── package.json
+│   ├── package-lock.json
+│   ├── server.js
+│   └── test.js
+├── helm/
+├── jenkins/
+│   └── Jenkinsfile
+├── kubernetes/
+├── scripts/
+├── screenshots/
+└── README.md
 ```
 
-### Deploy Application
+---
 
-```bash
-helm install nodejs-app ./nodejs-chart
+## 5.2 Dockerfile Used
+
+The Dockerfile defines how the Node.js application image is built.
+
+```dockerfile
+FROM node:22-alpine
+
+WORKDIR /app
+
+COPY package*.json ./
+
+RUN npm install --omit=dev
+
+COPY . .
+
+EXPOSE 3000
+
+CMD ["npm", "start"]
 ```
 
-### Verification
+---
+
+## 5.3 Build the Docker Image
+
+Since the Dockerfile is inside the `app/` folder, the Docker build context must point to `./app`.
+
+```bash
+docker build -t fab27fc/nodejs-microservice:test ./app
+```
+
+### Explanation
+
+| Component                          | Description                             |
+| ---------------------------------- | --------------------------------------- |
+| `docker build`                     | Builds a Docker image                   |
+| `-t`                               | Assigns a name and tag to the image     |
+| `fab27fc/nodejs-microservice:test` | Docker Hub repository and tag           |
+| `./app`                            | Build context containing the Dockerfile |
+
+---
+<img width="1610" height="647" alt="image" src="https://github.com/user-attachments/assets/4aed8c9a-2ca4-4e7f-a8ed-a189aa828398" />
+
+## 5.4 Verify the Image Locally
+
+After building the image, verify that it exists locally.
+
+```bash
+docker images
+```
+
+Expected output:
+
+```text
+REPOSITORY                      TAG    IMAGE ID       SIZE
+fab27fc/nodejs-microservice     test   <image_id>     <size>
+```
+<img width="1787" height="272" alt="image" src="https://github.com/user-attachments/assets/bb581f78-dbf5-40ea-bd80-bc2b9372ca75" />
+
+---
+
+## 5.5 Push the Image to Docker Hub
+
+Push the image to Docker Hub.
+
+```bash
+docker push fab27fc/nodejs-microservice:test
+```
+
+---
+
+## 5.6 Docker Hub Repository
+
+Repository:
+
+```text
+fab27fc/nodejs-microservice
+```
+
+Tag:
+
+```text
+test
+```
+
+Docker Hub successfully received the image and stored it in the repository.
+
+<img width="1172" height="940" alt="image" src="https://github.com/user-attachments/assets/7eb62c6e-6e7d-4286-809f-45cfafe351ce" />
+
+---
+
+## 5.7 Result
+
+The Docker image was successfully built and pushed to Docker Hub.
+
+This confirms that the application is now available in a container registry and can be pulled by Kubernetes during deployment.
+
+---
+
+## Commands Summary
+
+```bash
+docker build -t fab27fc/nodejs-microservice:test ./app
+docker images
+docker push fab27fc/nodejs-microservice:test
+```
+
+
+## 6. Deploy the Container to Kubernetes Using Helm Charts
+
+### Objective
+
+Deploy the Docker image published to Docker Hub into a Kubernetes cluster using Helm charts.
+
+This step validates that the containerized Node.js microservice can be deployed and managed inside Kubernetes.
+
+---
+
+### 6.1 Tools Used
+
+* Kubernetes k3s
+* Helm
+* Docker Hub
+* AWS EC2
+* Node.js Docker Image
+
+---
+
+### 6.2 Docker Image Used
+
+The Kubernetes deployment uses the Docker image previously published to Docker Hub:
+
+```text
+fab27fc/nodejs-microservice:v1
+```
+
+This image was built from the Node.js microservice application and pushed to Docker Hub during the Docker image publishing stage.
+
+---
+
+### 6.3 Helm Chart Structure
+
+The Helm chart was created inside the project directory:
+
+```text
+05_Jenkins_CICD_Microservices/
+└── helm/
+    └── nodejs-chart/
+        ├── Chart.yaml
+        ├── values.yaml
+        └── templates/
+            ├── deployment.yaml
+            ├── service.yaml
+            └── helpers.tpl
+```
+
+The Helm chart is responsible for defining the Kubernetes resources required to deploy the application.
+
+---
+
+### 6.4 Configure Helm Values
+
+File:
+
+```text
+helm/nodejs-chart/values.yaml
+```
+
+The image configuration was updated to use the Docker Hub repository:
+
+```yaml
+replicaCount: 2
+
+image:
+  repository: fab27fc/nodejs-microservice
+  pullPolicy: IfNotPresent
+  tag: "v1"
+```
+
+The service was configured to expose the application using NodePort:
+
+```yaml
+service:
+  type: NodePort
+  port: 3000
+```
+
+---
+
+### 6.5 Configure Kubernetes Deployment Template
+
+File:
+
+```text
+helm/nodejs-chart/templates/deployment.yaml
+```
+
+The container image was configured using Helm values:
+
+```yaml
+image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+```
+
+The application container exposes port 3000:
+
+```yaml
+ports:
+  - name: http
+    containerPort: 3000
+    protocol: TCP
+```
+
+---
+
+### 6.6 Deploy the Application Using Helm
+
+Navigate to the Helm directory:
+
+```bash
+cd ~/devops_labs/05_Jenkins_CICD_Microservices/helm
+```
+
+Install or upgrade the application release:
+
+```bash
+helm upgrade --install nodejs-app ./nodejs-chart
+```
+
+This command installs the Helm release if it does not exist, or updates it if it already exists.
+
+---
+
+### 6.7 Verify Helm Release
+
+Check the Helm release status:
+
+```bash
+helm list
+```
+
+<img width="1475" height="157" alt="image" src="https://github.com/user-attachments/assets/62a1766c-a5e2-487e-88e1-371d16b48e30" />
+
+---
+
+### 6.8 Verify Kubernetes Pods
+
+Check the running pods:
 
 ```bash
 kubectl get pods
-kubectl get svc
 ```
 
-[Agregar screenshots]
+<img width="1067" height="132" alt="image" src="https://github.com/user-attachments/assets/3eee480a-a0b0-4b7b-a9fe-eaa5b9c3c3cf" />
+
+
+The `1/1 Running` status confirms that both replicas are running successfully.
 
 ---
+
+### 6.9 Verify Kubernetes Deployment
+
+Check the deployment:
+
+```bash
+kubectl get deployments
+```
+
+Describe the deployment image:
+
+```bash
+kubectl describe deployment nodejs-app-nodejs-chart | grep Image
+```
+<img width="1462" height="187" alt="image" src="https://github.com/user-attachments/assets/6563563a-3053-4a3a-adab-7e6ddfc6668b" />
+
+
+This confirms that Kubernetes is running the correct Docker Hub image.
+
+---
+
+### 6.10 Verify Kubernetes Service
+
+Check the Kubernetes service:
+
+```bash
+kubectl get svc
+```
+<img width="1006" height="127" alt="image" src="https://github.com/user-attachments/assets/7e50b24d-1259-4d6d-9aec-96396b9b1d92" />
+
+
+The service exposes the container internally on port `3000` and externally through a NodePort.
+
+---
+
+### 6.11 Test the Application
+
+Store the NodePort value:
+
+```bash
+export NODE_PORT=$(kubectl get --namespace default -o jsonpath="{.spec.ports[0].nodePort}" services nodejs-app-nodejs-chart)
+```
+
+Test the application:
+
+```bash
+curl http://localhost:$NODE_PORT
+```
+<img width="1422" height="87" alt="image" src="https://github.com/user-attachments/assets/2fd28e79-4dde-4311-8d38-3e0c7cfdbc78" />
+
+Test the health endpoint:
+
+```bash
+curl http://localhost:$NODE_PORT/health
+```
+<img width="1402" height="92" alt="image" src="https://github.com/user-attachments/assets/f4c090b7-1361-4c30-9706-0130e70771b1" />
+
+
+---
+
+### 6.12 Issue Encountered: ImagePullBackOff
+
+During the first deployment, one of the pods entered the following state:
+
+```text
+ImagePullBackOff
+```
+
+The pod events showed that Kubernetes was trying to pull an incorrect image:
+
+```text
+fab27fc/nodejs-microservice/values.yaml:test
+```
+
+### Root Cause
+
+The Helm deployment template had an incorrect image reference.
+
+Kubernetes should pull:
+
+```text
+fab27fc/nodejs-microservice:v1
+```
+
+but the template generated an invalid image path.
+
+### Resolution
+
+The Helm deployment template was corrected to use:
+
+```yaml
+image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+```
+
+After updating the Helm chart, the application was redeployed:
+
+```bash
+helm upgrade --install nodejs-app ./nodejs-chart
+```
+
+Old failed pods were deleted so Kubernetes could recreate them:
+
+```bash
+kubectl delete pod -l app.kubernetes.io/instance=nodejs-app
+```
+
+After the fix, both pods entered the `Running` state.
+
+---
+
+### 6.13 Things to Review
+
+Before considering the deployment successful, the following items should be verified:
+
+| Check        | Command                                                             | Expected Result                   |
+| ------------ | ------------------------------------------------------------------- | --------------------------------- |
+| Helm release | `helm list`                                                         | STATUS = deployed                 |
+| Pods         | `kubectl get pods`                                                  | READY = 1/1, STATUS = Running     |
+| Deployment   | `kubectl get deployments`                                           | AVAILABLE replicas greater than 0 |
+| Image        | `kubectl describe deployment nodejs-app-nodejs-chart \| grep Image` | `fab27fc/nodejs-microservice:v1`  |
+| Service      | `kubectl get svc`                                                   | Service type = NodePort           |
+| Application  | `curl http://localhost:$NODE_PORT`                                  | Application response              |
+| Health Check | `curl http://localhost:$NODE_PORT/health`                           | JSON status healthy               |
+
+---
+
+### Result
+
+The Node.js microservice was successfully deployed to Kubernetes using Helm.
+
+The deployment used the Docker image from Docker Hub, created two running replicas, exposed the application through a NodePort service, and validated the application using both the root endpoint and the health endpoint.
+
 
 # 7. Verify the Deployment and Rollback on Failure
 
