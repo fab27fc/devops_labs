@@ -6,19 +6,6 @@ Managing configuration across multiple servers manually is error-prone and time-
 
 ---
 
-## Tools / Services Used
-
-- Ansible
-- AWS EC2
-- Azure VM
-- YAML
-- Linux
-- SSH
-- GitHub
-- Terraform
-
----
-
 ## Implementation Steps
 
 1. Install Ansible on a control node.
@@ -27,6 +14,18 @@ Managing configuration across multiple servers manually is error-prone and time-
 4. Use Ansible roles to modularize configurations.
 5. Run the playbook using ansible-playbook site.yml.
 6. Verify the setup by accessing the web server from different nodes.
+
+---
+
+## Tools / Services Used
+
+- Ansible
+- AWS EC2
+- YAML
+- Linux
+- SSH
+- GitHub
+- Terraform
 
 ---
 
